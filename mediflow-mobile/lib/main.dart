@@ -8,15 +8,17 @@ void main() {
   runApp(const ProviderScope(child: MediFlowApp()));
 }
 
-class MediFlowApp extends StatelessWidget {
+class MediFlowApp extends ConsumerWidget {
   const MediFlowApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
     return MaterialApp.router(
       title: 'MediFlow',
       theme: AppTheme.light,
-      routerConfig: routerProvider,
+      routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
   }

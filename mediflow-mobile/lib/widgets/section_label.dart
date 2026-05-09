@@ -69,7 +69,7 @@ class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderState
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            shape: BoxScheme.circle,
+            shape: BoxShape.circle,
             color: AppColors.primary.withOpacity(0.7 + (0.3 * _controller.value)),
             boxShadow: [
               BoxShadow(
