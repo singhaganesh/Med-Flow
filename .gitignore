@@ -1,0 +1,12 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Spring Boot
+mediflow-backend/target/
+mediflow-backend/src/main/resources/application.yml
+mediflow-backend/.mvn/wrapper/maven-wrapper.jar
+
+# OS
+.DS_Store
