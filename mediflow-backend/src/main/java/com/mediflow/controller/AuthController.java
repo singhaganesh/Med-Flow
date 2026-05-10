@@ -20,8 +20,13 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+    @PostMapping("/register/head-doctor")
+    public ResponseEntity<UserResponse> registerHeadDoctor(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.registerHeadDoctor(request));
+    }
+
+    @PostMapping("/register/staff")
+    public ResponseEntity<UserResponse> registerStaff(@Valid @RequestBody RegisterStaffRequest request) {
+        return ResponseEntity.ok(authService.registerStaff(request));
     }
 }

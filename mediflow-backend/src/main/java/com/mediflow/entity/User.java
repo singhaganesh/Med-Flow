@@ -47,6 +47,9 @@ public class User {
     @Column(name = "last_active_at")
     private OffsetDateTime lastActiveAt;
 
+    @Column(name = "assigned_doctor_id")
+    private UUID assignedDoctorId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
