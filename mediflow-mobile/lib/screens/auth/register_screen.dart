@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
+import '../../models/invite.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/section_label.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
-  const RegisterScreen({super.key});
+  final String? inviteToken;
+
+  const RegisterScreen({super.key, this.inviteToken});
 
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
@@ -18,7 +21,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  
   bool _isLoading = false;
+  bool _isValidatingToken = false;
+  InviteValidationResponse? _inviteData;
+  String? _tokenError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.inviteToken != null) {
+      _validateToken();
+    }
+  }
 
   @override
   void dispose() {
@@ -29,31 +44,60 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
+  Future<void> _validateToken() async {
+    setState(() => _isValidatingToken = true);
+    final data = await ref.read(authServiceProvider).validateInviteToken(widget.inviteToken!);
+    
+    if (mounted) {
+      setState(() {
+        _isValidatingToken = false;
+        if (data != null) {
+          _inviteData = data;
+          _clinicNameController.text = data.clinicName;
+        } else {
+          _tokenError = 'Invalid or expired invitation link.';
+        }
+      });
+    }
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    final success = await ref.read(authServiceProvider).register({
-      'clinicName': _clinicNameController.text,
-      'fullName': _fullNameController.text,
-      'email': _emailController.text,
-      'password': _passwordController.text,
-    });
+    bool success;
+    if (widget.inviteToken != null) {
+      success = await ref.read(authServiceProvider).registerStaff({
+        'inviteToken': widget.inviteToken,
+        'fullName': _fullNameController.text,
+        'email': _emailController.text,
+        'password': _passwordController.text,
+      });
+    } else {
+      success = await ref.read(authServiceProvider).registerHeadDoctor({
+        'clinicName': _clinicNameController.text,
+        'fullName': _fullNameController.text,
+        'email': _emailController.text,
+        'password': _passwordController.text,
+      });
+    }
 
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
 
     if (success) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful! Please log in.')),
+          SnackBar(content: Text(widget.inviteToken != null 
+            ? 'Registration successful! Waiting for approval.' 
+            : 'Clinic registered! Please log in.')),
         );
         context.go('/login');
       }
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration failed. Please try again.')),
+          const SnackBar(content: Text('Registration failed. Please check your data.')),
         );
       }
     }
@@ -61,6 +105,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isValidatingToken) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_tokenError != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                const SizedBox(height: 16),
+                Text(_tokenError!, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 24),
+                ElevatedButton(onPressed: () => context.go('/login'), child: const Text('Back to Login')),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final isStaff = widget.inviteToken != null;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -70,26 +140,34 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SectionLabel(label: 'Get Started'),
+                SectionLabel(label: isStaff ? 'Join Clinic' : 'Get Started'),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Onboard your\nclinic today.',
+                  isStaff ? 'Join the team at\n${_inviteData?.clinicName}.' : 'Onboard your\nclinic today.',
                   style: Theme.of(context).textTheme.displayLarge,
                 ),
-                const SizedBox(height: AppSpacing.xxl),
-                TextFormField(
-                  controller: _clinicNameController,
-                  decoration: const InputDecoration(
-                    hintText: 'Clinic Name',
-                    prefixIcon: Icon(Icons.local_hospital_outlined, color: AppColors.mutedForeground),
+                if (isStaff) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'You are joining as a ${_inviteData?.role.toLowerCase()}.',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                   ),
-                  validator: (v) => v!.isEmpty ? 'Required' : null,
-                ),
+                ],
+                const SizedBox(height: AppSpacing.xxl),
+                if (!isStaff)
+                  TextFormField(
+                    controller: _clinicNameController,
+                    decoration: const InputDecoration(
+                      hintText: 'Clinic Name',
+                      prefixIcon: Icon(Icons.local_hospital_outlined, color: AppColors.mutedForeground),
+                    ),
+                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                  ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _fullNameController,
                   decoration: const InputDecoration(
-                    hintText: 'Full Name (Head Doctor)',
+                    hintText: 'Your Full Name',
                     prefixIcon: Icon(Icons.person_outline, color: AppColors.mutedForeground),
                   ),
                   validator: (v) => v!.isEmpty ? 'Required' : null,
@@ -118,27 +196,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   onPressed: _isLoading ? null : _register,
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Register Clinic'),
+                      : Text(isStaff ? 'Join Clinic' : 'Register Clinic'),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 Center(
                   child: TextButton(
                     onPressed: () => context.go('/login'),
-                    child: RichText(
-                      text: TextSpan(
-                        text: 'Already have an account? ',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.mutedForeground),
-                        children: const [
-                          TextSpan(
-                            text: 'Login',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline,
-                            ),
+                    child: Text(
+                      'Already have an account? Login',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.mutedForeground,
+                            decoration: TextDecoration.underline,
                           ),
-                        ],
-                      ),
                     ),
                   ),
                 ),

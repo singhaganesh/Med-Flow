@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
+import '../models/invite.dart';
 import 'api_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -49,9 +50,30 @@ class AuthService {
     await _storage.delete(key: 'jwt_token');
   }
 
-  Future<bool> register(Map<String, dynamic> data) async {
+  Future<InviteValidationResponse?> validateInviteToken(String token) async {
     try {
-      final response = await _dio.post('/auth/register', data: data);
+      final response = await _dio.get('/invites/validate/$token');
+      if (response.statusCode == 200) {
+        return InviteValidationResponse.fromJson(response.data['data']);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<bool> registerHeadDoctor(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/auth/register/head-doctor', data: data);
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> registerStaff(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/auth/register/staff', data: data);
       return response.statusCode == 200;
     } catch (e) {
       return false;
