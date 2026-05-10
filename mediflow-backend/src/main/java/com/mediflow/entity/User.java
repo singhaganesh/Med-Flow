@@ -27,6 +27,7 @@ public class User {
     @Column(nullable = false)
     private String role;
 
+    @Builder.Default
     @Column(nullable = false)
     private String status = "pending";
 

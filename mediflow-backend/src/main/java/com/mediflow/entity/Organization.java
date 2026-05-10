@@ -42,6 +42,7 @@ public class Organization {
     @Column(name = "stripe_subscription_id")
     private String stripeSubscriptionId;
 
+    @Builder.Default
     @Column(nullable = false)
     private String plan = "starter";
 
@@ -49,6 +50,7 @@ public class Organization {
     @Column(name = "plan_config", columnDefinition = "jsonb")
     private String planConfig;
 
+    @Builder.Default
     @Column(name = "subscription_status", nullable = false)
     private String subscriptionStatus = "active";
 

@@ -3,9 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 final dioProvider = Provider<Dio>((ref) {
+  const backendUrl = String.fromEnvironment(
+    'BACKEND_URL',
+    defaultValue: 'https://api.mediflow.in/api/v1',
+  );
+
   final dio = Dio(
     BaseOptions(
-      baseUrl: 'http://10.162.2.45:8080/api/v1', // Local testing IP
+      baseUrl: backendUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       headers: {

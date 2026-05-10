@@ -72,8 +72,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const DoctorDashboardScreen(),
       ),
       // Agent Routes
-...
-
+      GoRoute(
         path: '/agent/patients',
         builder: (context, state) => const MyPatientsScreen(),
       ),

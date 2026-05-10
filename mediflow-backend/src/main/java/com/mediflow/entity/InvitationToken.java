@@ -45,6 +45,7 @@ public class InvitationToken {
     @Column(name = "used_by")
     private UUID usedBy;
 
+    @Builder.Default
     @Column(name = "max_uses", nullable = false)
     private Integer maxUses = 1;
 

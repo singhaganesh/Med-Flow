@@ -1,5 +1,6 @@
 package com.mediflow.controller;
 
+import com.mediflow.dto.response.ApiResponse;
 import com.mediflow.dto.response.UserResponse;
 import com.mediflow.entity.User;
 import com.mediflow.repository.UserRepository;
@@ -22,12 +23,12 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getMe() {
+    public ResponseEntity<ApiResponse<UserResponse>> getMe() {
         UUID userId = SecurityUtils.getCurrentUserId();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return ResponseEntity.ok(UserResponse.builder()
+        return ResponseEntity.ok(ApiResponse.success(UserResponse.builder()
                 .id(user.getId())
                 .orgId(user.getOrganization().getId())
                 .orgName(user.getOrganization().getName())
@@ -35,6 +36,6 @@ public class UserController {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .status(user.getStatus())
-                .build());
+                .build()));
     }
 }
