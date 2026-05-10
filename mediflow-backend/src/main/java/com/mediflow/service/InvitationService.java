@@ -41,7 +41,7 @@ public class InvitationService {
                 .role(role)
                 .generatedBy(generatedBy)
                 .assignedDoctorId(assignedDoctorId)
-                .expiresAt(OffsetDateTime.now().plusHours(48))
+                .expiresAt(OffsetDateTime.now().plusHours(12))
                 .maxUses(1)
                 .build();
 

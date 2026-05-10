@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/role_selector_screen.dart';
 import '../screens/agent/my_patients_screen.dart';
 import '../screens/agent/upload_patient_screen.dart';
 import '../screens/shared/pending_approval_screen.dart';
@@ -37,7 +38,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (authState.status == AuthStatus.unauthenticated) {
-        if (!isLoggingIn && !isRegistering) return '/login';
+        final isSelectingRole = state.matchedLocation == '/role-selector';
+        if (!isLoggingIn && !isRegistering && !isSelectingRole) return '/login';
       }
 
       return null;
@@ -48,10 +50,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
+        path: '/role-selector',
+        builder: (context, state) => const RoleSelectorScreen(),
+      ),
+      GoRoute(
         path: '/register',
         builder: (context, state) {
           final token = state.uri.queryParameters['token'];
-          return RegisterScreen(inviteToken: token);
+          final role = state.uri.queryParameters['role'];
+          return RegisterScreen(inviteToken: token, role: role);
         },
       ),
       GoRoute(

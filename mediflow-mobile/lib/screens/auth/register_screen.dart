@@ -8,8 +8,9 @@ import '../../widgets/section_label.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   final String? inviteToken;
+  final String? role;
 
-  const RegisterScreen({super.key, this.inviteToken});
+  const RegisterScreen({super.key, this.inviteToken, this.role});
 
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
@@ -70,6 +71,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (widget.inviteToken != null) {
       success = await ref.read(authServiceProvider).registerStaff({
         'inviteToken': widget.inviteToken,
+        'role': widget.role,
         'fullName': _fullNameController.text,
         'email': _emailController.text,
         'password': _passwordController.text,

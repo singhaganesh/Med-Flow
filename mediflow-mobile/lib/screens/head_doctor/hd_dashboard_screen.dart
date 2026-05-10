@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/section_label.dart';
 
@@ -55,12 +56,9 @@ class HdDashboardScreen extends ConsumerWidget {
   }
 
   void _showInviteDialog(BuildContext context, WidgetRef ref, String role) async {
-    // In a real app, we'd call the backend to get the token.
-    // For now, we simulate the link generation.
-    final dio = ref.read(authServiceProvider);
-    
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text('Invite $role'),
         content: const Column(
@@ -74,46 +72,66 @@ class HdDashboardScreen extends ConsumerWidget {
       ),
     );
 
-    // TODO: Call real generate endpoint
-    await Future.delayed(const Duration(seconds: 1));
-    if (!context.mounted) return;
-    Navigator.pop(context);
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.post('/invites/generate', data: {'role': role});
+      
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close loading
 
-    const fakeLink = 'https://app.mediflow.in/register?token=abc-123-xyz';
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Invite Link Ready'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Share this link with the doctor. It will expire in 48 hours.'),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.muted,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(fakeLink, style: TextStyle(fontSize: 12)),
+      if (response.statusCode == 200) {
+        final token = response.data['data']['token'];
+        
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Invite Code Ready'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Share this code with the doctor. It will expire in 12 hours.'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.muted,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                  ),
+                  child: SelectableText(
+                    token, 
+                    style: const TextStyle(
+                      fontSize: 18, 
+                      fontWeight: FontWeight.bold, 
+                      letterSpacing: 1.2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(const ClipboardData(text: fakeLink));
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Link copied to clipboard')),
-              );
-            },
-            child: const Text('Copy & Close'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: token));
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Code copied to clipboard')),
+                  );
+                },
+                child: const Text('Copy & Close'),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to generate invite: $e')),
+      );
+    }
   }
 }
 

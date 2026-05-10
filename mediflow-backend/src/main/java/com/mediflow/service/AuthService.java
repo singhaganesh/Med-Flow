@@ -86,12 +86,19 @@ public class AuthService {
 
     @Transactional
     public UserResponse registerStaff(RegisterStaffRequest request) {
+        // 1. Validate Token
         InvitationToken invitation = invitationService.validateToken(request.getInviteToken());
 
+        // 2. Enforce Role Locking
+        if (!invitation.getRole().equalsIgnoreCase(request.getRole())) {
+            throw new RuntimeException("This invitation link is not valid for the " + request.getRole() + " role.");
+        }
+
+        // 3. Create User
         User user = User.builder()
                 .id(UUID.randomUUID())
                 .organization(invitation.getOrganization())
-                .role(invitation.getRole())
+                .role(invitation.getRole()) // Use the token's role for security
                 .status("pending")
                 .fullName(request.getFullName())
                 .email(request.getEmail())
@@ -100,6 +107,7 @@ public class AuthService {
 
         user = userRepository.save(user);
 
+        // 4. Mark Token as Used
         invitation.setUsedAt(OffsetDateTime.now());
         invitation.setUsedBy(user.getId());
         tokenRepository.save(invitation);

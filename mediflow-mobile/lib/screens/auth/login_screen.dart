@@ -90,7 +90,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: AppSpacing.xl),
               Center(
                 child: TextButton(
-                  onPressed: () => context.go('/register'),
+                  onPressed: () => context.go('/role-selector'),
                   child: RichText(
                     text: TextSpan(
                       text: "Don't have an account? ",
